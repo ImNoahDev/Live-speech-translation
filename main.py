@@ -6,9 +6,14 @@ import pvporcupine
 import struct
 from faster_whisper import WhisperModel
 import secrets
+from deep_translator import GoogleTranslator
+from elevenlabs.client import ElevenLabs
+from elevenlabs import play, save, stream, Voice, VoiceSettings
+from langdetect import detect
+client = ElevenLabs(api_key=os.getenv('labs'))
 
 # Initialize Whisper model
-model = WhisperModel("tiny.en", device="cpu", compute_type="int8")
+model = WhisperModel("large-v3", device="cpu", compute_type="int8")
 
 # Parameters for recording
 FORMAT = pyaudio.paInt16
@@ -22,6 +27,10 @@ SILENT_CHUNKS_TO_STOP = int(1 * RATE / CHUNK)  # Number of silent chunks to stop
 access_key = os.getenv('porcupine')
 keyword_paths = ['./translator.ppn']
 
+def detect_language_with_langdetect(text):
+    # Use langdetect library to detect the language of the text
+    language = detect(text)
+    return language
 
 def is_silent(chunk):
     # Check if the amplitude of the audio chunk is below the threshold
@@ -75,7 +84,7 @@ def save_audio(filename, audio_data, sample_rate):
         wf.writeframes(audio_data.tobytes())
 
 def transcribe_audio(filename):
-    segments, info = model.transcribe(filename)
+    segments, info = model.transcribe(filename, language="fr")
     transcription = ' '.join([segment.text for segment in segments])
     return transcription
 
@@ -124,8 +133,26 @@ while True:
             transcription = transcribe_audio(audio_filename)
             print("Transcription:", transcription)
             
+            if detect_language_with_langdetect(transcription) == "fr":
+                translated = GoogleTranslator(source='auto', target='en').translate(transcription)
+                audio = client.generate(
+                    text=translated,
+                    voice="Arnold",
+                    model="eleven_multilingual_v2",
+                    stream=True
+                )
+                stream(audio)
+                continue
+            else:
+                # Translate the transcription
+                translated = GoogleTranslator(source='auto', target='fr').translate(transcription)
+                audio = client.generate(
+                    text=translated,
+                    voice="Jean",
+                    model="eleven_multilingual_v2",
+                    stream=True
+                )
+                stream(audio)
 
     except Exception as e:
         print(f"Error during execution: {e}")
-
-

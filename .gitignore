@@ -8,6 +8,8 @@ __pycache__/
 .ppn
 .wav
 
+recorded_audio.wav
+
 # Files I want to be ignored 
 translator.ppn
 settings.json
