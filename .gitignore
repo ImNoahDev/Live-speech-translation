@@ -5,6 +5,13 @@ __pycache__/
 
 # C extensions
 *.so
+.ppn
+.wav
+
+# Files I want to be ignored 
+translator.ppn
+settings.json
+ecorded_audio.wav
 
 # Distribution / packaging
 .Python
